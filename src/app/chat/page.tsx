@@ -9,10 +9,27 @@ import {
 } from '@/components/chat';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // 初期化時にウェルカムメッセージを表示
+  useEffect(() => {
+    const welcomeMessage: ChatMessage = {
+      id: uuidv4(),
+      content: 'こんにちは！Manus AIのWindowsクローンです。タスクや質問がありましたらお気軽にどうぞ。',
+      role: 'assistant',
+      createdAt: new Date(),
+    };
+    setMessages([welcomeMessage]);
+  }, []);
 
   // 新しいメッセージを追加する関数
   const handleSendMessage = async (content: string) => {
@@ -26,6 +43,7 @@ export default function ChatPage() {
     
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setModelError(null); // エラー状態をリセット
     
     try {
       // APIにメッセージを送信
@@ -47,6 +65,17 @@ export default function ChatPage() {
       if (!response.ok) {
         const errorData = await response.json();
         const errorMessage = errorData.error || 'エラーが発生しました';
+        
+        // モデル関連のエラーの場合
+        if (errorMessage.includes('No model selected') || 
+            errorMessage.includes('No Ollama models detected')) {
+          setModelError(errorMessage);
+          if (errorData.suggestion) {
+            setModelError(`${errorMessage}\n${errorData.suggestion}`);
+          }
+          throw new Error(errorMessage);
+        }
+        
         throw new Error(errorMessage);
       }
       
@@ -90,6 +119,19 @@ export default function ChatPage() {
   return (
     <MainLayout>
       <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
+        {modelError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>モデルエラー</AlertTitle>
+            <AlertDescription>
+              <p className="whitespace-pre-line mb-2">{modelError}</p>
+              <Button onClick={() => router.push('/settings')} size="sm">
+                設定ページへ移動
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex-1 overflow-hidden">
           <MessageList 
             messages={messages} 
