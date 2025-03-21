@@ -141,6 +141,8 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
 - shadcn/uiコンポーネントの追加実装完了
   - Dialog, Button, Toast, Toaster, Form, Input, Label, Textarea, Select, Radio Group コンポーネントを追加
   - フィードバックダイアログで使用される全てのUIコンポーネントの実装完了
+- 依存関係の修正
+  - `@radix-ui/react-radio-group` パッケージを追加し、RadioGroupコンポーネントの正常動作を確保
 
 ## 次のステップ
 - Windows固有機能の実装
