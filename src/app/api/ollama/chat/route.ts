@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OllamaClient } from '@/lib/ollama/ollama-client';
 import { getSelectedOllamaModel, getDetectedOllamaModels, setDefaultOllamaModel, checkOllamaAvailability } from '@/lib/ollama/service';
+import prisma from '@/lib/prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,29 +25,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 設定で選択されているモデルを取得
+    // 直接データベースからOllamaモデルを取得
+    const ollamaModels = await prisma.ollamaModel.findMany({
+      where: { isDetected: true },
+      orderBy: { name: 'asc' }
+    });
+
+    console.log(`Found ${ollamaModels.length} models in the database`);
+
+    if (ollamaModels.length === 0) {
+      return NextResponse.json(
+        { 
+          error: 'No Ollama models detected. Please install at least one model using the Ollama CLI.',
+          suggestion: 'You can install a model using the command: ollama pull llama3:latest'  
+        },
+        { status: 400 }
+      );
+    }
+
+    // 設定から選択されているモデルを取得
     let selectedModel = await getSelectedOllamaModel();
     
     // モデルが選択されていない場合、利用可能なモデルを再取得して自動選択を試みる
     if (!selectedModel) {
-      const availableModels = await getDetectedOllamaModels();
+      console.log('No model selected. Attempting to auto-select from available models.');
       
-      if (availableModels.length > 0) {
+      if (ollamaModels.length > 0) {
         // 利用可能なモデルがある場合は最初のモデルを選択
-        await setDefaultOllamaModel(availableModels[0].name);
-        selectedModel = availableModels[0];
+        await setDefaultOllamaModel(ollamaModels[0].name);
+        selectedModel = ollamaModels[0];
         console.log(`Auto-selected model: ${selectedModel.name}`);
       } else {
-        // それでもモデルがない場合はエラーを返す
+        // ここには到達しないはずだが念のため
         return NextResponse.json(
           { 
-            error: 'No Ollama models detected. Please install at least one model using the Ollama CLI.',
+            error: 'No Ollama models available after refresh. Please install at least one model using the Ollama CLI.',
             suggestion: 'You can install a model using the command: ollama pull llama3:latest'  
           },
           { status: 400 }
         );
       }
     }
+
+    console.log(`Using model: ${selectedModel.name} for chat generation`);
 
     // Ollamaクライアントを初期化
     const ollamaClient = new OllamaClient();
