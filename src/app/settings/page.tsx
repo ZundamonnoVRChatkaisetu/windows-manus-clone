@@ -19,12 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette, Loader2, CheckCircle } from 'lucide-react';
+import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { 
   getInstalledModels, 
   OllamaModel, 
   getAvailableModels,
-  checkOllamaInstallation
+  checkOllamaInstallation,
+  pullModel
 } from '@/lib/ollama';
 import Link from 'next/link';
 import { 
@@ -33,6 +34,7 @@ import {
   updateSetting 
 } from '@/lib/settings';
 import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -40,6 +42,7 @@ export default function SettingsPage() {
   const [isLoadingModels, setIsLoadingModels] = useState(true);
   const [ollamaRunning, setOllamaRunning] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [downloadingLlama, setDownloadingLlama] = useState(false);
   
   // 設定をロード
   const [settings, setSettings] = useState(() => loadSettings());
@@ -76,7 +79,14 @@ export default function SettingsPage() {
       const currentModel = settings.selectedModel;
       const modelExists = installed.some(model => model.name === currentModel);
       
-      if (!modelExists && installed.length > 0) {
+      // llama3:latestがインストールされているかチェック
+      const hasLlama3Latest = installed.some(model => model.name === 'llama3:latest');
+      
+      if (hasLlama3Latest && (!modelExists || !currentModel)) {
+        // llama3:latestが利用可能で、現在のモデルが未設定または存在しない場合は自動選択
+        updateSettings({ selectedModel: 'llama3:latest' });
+      } else if (!modelExists && installed.length > 0) {
+        // それ以外の場合は最初のモデルを選択
         updateSettings({ selectedModel: installed[0].name });
       }
     } catch (error) {
@@ -101,6 +111,43 @@ export default function SettingsPage() {
       description: "アプリケーションの設定が更新されました",
     });
   };
+
+  // llama3:latestをダウンロード
+  const handleDownloadLlama3 = async () => {
+    if (downloadingLlama) return;
+
+    setDownloadingLlama(true);
+    try {
+      toast({
+        title: "llama3:latestをダウンロード中",
+        description: "このプロセスには数分かかることがあります...",
+      });
+
+      await pullModel('llama3:latest');
+      
+      toast({
+        title: "ダウンロード完了",
+        description: "llama3:latestモデルが正常にインストールされました。",
+      });
+      
+      // モデルリストを更新して、新しくインストールされたllama3:latestを選択
+      await loadModels();
+      updateSettings({ selectedModel: 'llama3:latest' });
+      
+    } catch (error) {
+      console.error('モデルダウンロードエラー:', error);
+      toast({
+        title: "エラー",
+        description: "モデルのダウンロード中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingLlama(false);
+    }
+  };
+
+  // llama3:latestがインストールされているかチェック
+  const hasLlama3Latest = installedModels.some(model => model.name === 'llama3:latest');
   
   return (
     <MainLayout>
@@ -147,29 +194,68 @@ export default function SettingsPage() {
                     <span>で起動してください。</span>
                   </div>
                 ) : installedModels.length === 0 ? (
-                  <div className="text-sm text-amber-500 flex items-center space-x-2 h-10 py-2">
-                    <span>インストール済みのモデルがありません。</span>
-                    <Link href="/ollama" className="text-primary underline">
-                      Ollama管理ページ
+                  <div className="text-sm text-amber-500 flex flex-col space-y-2 py-2">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1.5" />
+                      <span>インストール済みのモデルがありません。</span>
+                    </div>
+                    <Button 
+                      onClick={handleDownloadLlama3} 
+                      disabled={downloadingLlama} 
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">または</p>
+                    <Link href="/ollama" className="w-full">
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Ollama管理ページへ
+                      </Button>
                     </Link>
-                    <span>でモデルをインストールしてください。</span>
                   </div>
                 ) : (
-                  <Select 
-                    value={settings.selectedModel} 
-                    onValueChange={(value) => updateSettings({ selectedModel: value })}
-                  >
-                    <SelectTrigger id="model-select">
-                      <SelectValue placeholder="モデルを選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {installedModels.map((model) => (
-                        <SelectItem key={model.name} value={model.name}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-3">
+                    <Select 
+                      value={settings.selectedModel} 
+                      onValueChange={(value) => updateSettings({ selectedModel: value })}
+                    >
+                      <SelectTrigger id="model-select">
+                        <SelectValue placeholder="モデルを選択" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {installedModels.map((model) => (
+                          <SelectItem key={model.name} value={model.name}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {!hasLlama3Latest && (
+                      <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <AlertTitle>推奨モデルがインストールされていません</AlertTitle>
+                        <AlertDescription>
+                          <p className="mb-2">最適なパフォーマンスのため、llama3:latestのインストールをお勧めします。</p>
+                          <Button 
+                            onClick={handleDownloadLlama3} 
+                            disabled={downloadingLlama} 
+                            size="sm"
+                            variant="secondary"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
                 )}
               </div>
               
@@ -314,7 +400,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">選択中モデル</p>
-                  <p className="text-sm font-medium">{settings.selectedModel}</p>
+                  <p className="text-sm font-medium">{settings.selectedModel || 'なし'}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">GPU状態</p>
