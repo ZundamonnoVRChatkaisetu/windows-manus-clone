@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { ComputerWindow, Action } from '@/components/computer';
 import { v4 as uuidv4 } from 'uuid';
+import { Play, Stop, RotateCcw, Cpu } from 'lucide-react';
 
 // サンプルアクションデータ
 const SAMPLE_ACTIONS: Action[] = [
