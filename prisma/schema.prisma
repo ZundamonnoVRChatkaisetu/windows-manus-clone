@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ユーザー設定
+model UserSettings {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  theme             String   @default("system") // system, light, dark
+  selectedModel     String?  // ユーザーが選択したOllamaモデル
+  browserAutoScroll Boolean  @default(true)  // ブラウザの自動スクロール設定
+  assistantName     String   @default("Manus AI") // アシスタントの名前設定
+  systemPrompt      String?  // デフォルトのシステムプロンプト
+}
+
+// タスク情報
+model Task {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  title       String
+  description String?
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  completedAt DateTime?
+  subTasks    SubTask[]
+  logs        TaskLog[]
+  metadata    String?      // JSON形式のメタデータ
+
+  @@index([status])
+}
+
+// サブタスク情報
+model SubTask {
+  id          String     @id @default(cuid())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  order       Int        @default(0)
+  completedAt DateTime?
+  task        Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId      String
+  logs        TaskLog[]
+
+  @@index([taskId])
+  @@index([status])
+}
+
+// タスクの実行ログ
+model TaskLog {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  message   String
+  level     LogLevel
+  taskId    String?
+  subTaskId String?
+  metadata  String?   // JSON形式のメタデータ
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  subTask   SubTask?  @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([subTaskId])
+}
+
+// Ollamaモデル情報
+model OllamaModel {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  displayName   String?
+  modified      DateTime
+  size          BigInt
+  quantization  String?
+  parameterSize String?
+  format        String?
+  family        String?
+  isDetected    Boolean  @default(true) // システムが自動検出したかどうか
+}
+
+// Manusの知識ベース
+model KnowledgeBase {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String?
+  content     String   // Markdownフォーマットの知識ベース
+  tags        String?  // カンマ区切りのタグ
+}
+
+// サンドボックスセッション履歴
+model SandboxSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String?
+  commands  String?  // 実行されたコマンドの履歴（JSON形式）
+  outputs   String?  // コマンド出力の履歴（JSON形式）
+  metadata  String?  // セッションのメタデータ（JSON形式）
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
