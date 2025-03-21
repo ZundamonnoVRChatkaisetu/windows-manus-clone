@@ -153,6 +153,10 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
   - getLanguageSample関数の実装と名前付きエクスポートへの変更
   - CodeEditorコンポーネントのPropsインターフェースを修正
   - コンポーネント間の連携の整合性確保
+  - レイアウトコンポーネントの修正（header.tsx, main-layout.tsx, sidebar.tsx）
+  - レイアウト関連コンポーネントに'use client'ディレクティブを追加
+  - フィードバック関連コンポーネントに'use client'ディレクティブを追加（feedback-dialog.tsx, feedback-form.tsx）
+  - ハイドレーションエラーを修正
   - `computer/page.tsx`に不足していたLucideアイコンのインポートを追加
   - Node.js依存の`ollama-installer.ts`をAPIルートに移行し、サーバーとクライアントの責務を分離
   - `/api/ollama/check`と`/api/ollama/start`のAPIルートを追加し、Node.js機能をサーバーサイドで実行
