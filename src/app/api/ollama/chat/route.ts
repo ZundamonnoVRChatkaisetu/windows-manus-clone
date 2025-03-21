@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OllamaClient } from '@/lib/ollama/ollama-client';
-import { getSelectedOllamaModel } from '@/lib/ollama/service';
-import { checkOllamaAvailability } from '@/lib/ollama/service';
+import { getSelectedOllamaModel, getDetectedOllamaModels, setDefaultOllamaModel, checkOllamaAvailability } from '@/lib/ollama/service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,12 +25,27 @@ export async function POST(req: NextRequest) {
     }
 
     // 設定で選択されているモデルを取得
-    const selectedModel = await getSelectedOllamaModel();
+    let selectedModel = await getSelectedOllamaModel();
+    
+    // モデルが選択されていない場合、利用可能なモデルを再取得して自動選択を試みる
     if (!selectedModel) {
-      return NextResponse.json(
-        { error: 'No model selected. Please select a model in settings.' },
-        { status: 400 }
-      );
+      const availableModels = await getDetectedOllamaModels();
+      
+      if (availableModels.length > 0) {
+        // 利用可能なモデルがある場合は最初のモデルを選択
+        await setDefaultOllamaModel(availableModels[0].name);
+        selectedModel = availableModels[0];
+        console.log(`Auto-selected model: ${selectedModel.name}`);
+      } else {
+        // それでもモデルがない場合はエラーを返す
+        return NextResponse.json(
+          { 
+            error: 'No Ollama models detected. Please install at least one model using the Ollama CLI.',
+            suggestion: 'You can install a model using the command: ollama pull llama3:latest'  
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Ollamaクライアントを初期化
