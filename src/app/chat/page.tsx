@@ -8,6 +8,7 @@ import {
   ChatMessage 
 } from '@/components/chat';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from '@/components/ui/use-toast';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -27,14 +28,34 @@ export default function ChatPage() {
     setIsLoading(true);
     
     try {
-      // TODO: ここでOllamaサービスを使用して応答を取得
-      // 仮のタイムアウトでレスポンスをシミュレート
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // APIにメッセージを送信
+      const response = await fetch('/api/ollama/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: messages
+            .concat(userMessage)
+            .map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'エラーが発生しました';
+        throw new Error(errorMessage);
+      }
+      
+      const data = await response.json();
       
       // アシスタントからの応答を追加
       const assistantMessage: ChatMessage = {
         id: uuidv4(),
-        content: `あなたのメッセージ: "${content}" を受け取りました。このデモではOllamaと連携していないため、実際の応答は生成されていません。`,
+        content: data.message.content,
         role: 'assistant',
         createdAt: new Date(),
       };
@@ -43,15 +64,24 @@ export default function ChatPage() {
     } catch (error) {
       console.error('エラーが発生しました:', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'エラーが発生しました。もう一度お試しください。';
+      
+      // エラー通知
+      toast({
+        title: "エラー",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
       // エラーメッセージを追加
-      const errorMessage: ChatMessage = {
+      const systemMessage: ChatMessage = {
         id: uuidv4(),
-        content: 'エラーが発生しました。もう一度お試しください。',
+        content: errorMessage,
         role: 'system',
         createdAt: new Date(),
       };
       
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, systemMessage]);
     } finally {
       setIsLoading(false);
     }
