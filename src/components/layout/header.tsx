@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Menu, Sun, Moon, User } from 'lucide-react';
@@ -18,6 +18,12 @@ export function Header({
   showMenuButton = false 
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // マウント後にのみレンダリングするようにする（ハイドレーションエラー対策）
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -52,15 +58,20 @@ export function Header({
           variant="ghost" 
           size="icon" 
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+          title={mounted && theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
         >
-          {theme === 'dark' ? (
-            <Sun className="h-5 w-5" />
+          {/* マウント後にのみテーマアイコンをレンダリング */}
+          {mounted ? (
+            theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )
           ) : (
-            <Moon className="h-5 w-5" />
+            <div className="h-5 w-5" /> // プレースホルダー
           )}
           <span className="sr-only">
-            {theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+            {mounted && theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
           </span>
         </Button>
 
