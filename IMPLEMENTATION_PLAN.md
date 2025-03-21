@@ -150,9 +150,11 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
   - Ollamaサービスとのやり取りを行うためのメソッドを実装（モデル一覧取得、テキスト生成、チャット、埋め込み取得など）
   - Ollamaサービス機能をindexファイルから正しくエクスポートするように修正
   - モデルのダウンロード用APIエンドポイントを実装（`/api/ollama/models/pull`）
-  - ホームページでllama3:latestモデルを簡単にインストールできるUIを実装
-  - 設定ページでllama3:latestをインストールするためのオプションを追加
-  - llama3:latestが利用可能な場合は自動的に選択する機能を実装
+  - ユーザー主体のモデル選択機能の実装
+    - 強制的なllama3:latestの自動選択ロジックを削除
+    - ホームページUIを複数モデルをサポートするよう修正
+    - 設定ページで自由にモデルを選択できるよう調整
+    - 明示的なユーザー選択を優先する動作に変更
 - Next.jsのクライアント/サーバーコンポーネント対応
   - `code-editor.tsx`ファイルに`'use client'`ディレクティブを追加し、useRefを使用可能に
   - エディタコンポーネントの修正完了（vscode-editor.tsx, editor-header.tsx, file-tree.tsx, file-tabs.tsx, output-panel.tsx）
