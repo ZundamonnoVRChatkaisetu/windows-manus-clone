@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout';
 import { 
   Card, 
@@ -19,12 +19,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette } from 'lucide-react';
+import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette, Loader2 } from 'lucide-react';
+import { 
+  getInstalledModels, 
+  OllamaModel, 
+  getAvailableModels,
+  checkOllamaInstallation
+} from '@/lib/ollama';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const [developerMode, setDeveloperMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState('llama3:8b-instruct-q4_0');
+  const [installedModels, setInstalledModels] = useState<OllamaModel[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(true);
+  const [ollamaRunning, setOllamaRunning] = useState(false);
+  
+  useEffect(() => {
+    // Ollamaのステータスを確認
+    const checkOllamaStatus = async () => {
+      try {
+        const info = await checkOllamaInstallation();
+        setOllamaRunning(info.isRunning || false);
+        
+        if (info.isRunning) {
+          loadModels();
+        } else {
+          setIsLoadingModels(false);
+        }
+      } catch (error) {
+        console.error('Ollamaステータス確認中にエラーが発生しました:', error);
+        setIsLoadingModels(false);
+      }
+    };
+    
+    checkOllamaStatus();
+  }, []);
+  
+  // モデル一覧を読み込む
+  const loadModels = async () => {
+    setIsLoadingModels(true);
+    try {
+      const installed = await getInstalledModels();
+      setInstalledModels(installed);
+      
+      // インストール済みモデルがある場合は、最初のモデルを選択
+      if (installed.length > 0) {
+        setSelectedModel(installed[0].name);
+      }
+    } catch (error) {
+      console.error('モデル一覧の読み込み中にエラーが発生しました:', error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
   
   return (
     <MainLayout>
@@ -48,17 +97,41 @@ export default function SettingsPage() {
                 <label htmlFor="model-select" className="text-sm font-medium">
                   使用モデル
                 </label>
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger id="model-select">
-                    <SelectValue placeholder="モデルを選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="llama3:8b-instruct-q4_0">Llama 3 8B Instruct</SelectItem>
-                    <SelectItem value="llama3:70b-instruct-q4_0">Llama 3 70B Instruct</SelectItem>
-                    <SelectItem value="mixtral:8x7b-instruct-v0.1-q4_0">Mixtral 8x7B Instruct</SelectItem>
-                    <SelectItem value="phi3:mini-128k-instruct-q4_0">Phi-3 Mini 128K</SelectItem>
-                  </SelectContent>
-                </Select>
+                {isLoadingModels ? (
+                  <div className="flex items-center space-x-2 h-10 py-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">モデル一覧を読み込み中...</span>
+                  </div>
+                ) : !ollamaRunning ? (
+                  <div className="text-sm text-amber-500 flex items-center space-x-2 h-10 py-2">
+                    <span>Ollamaサービスが実行されていません。</span>
+                    <Link href="/ollama" className="text-primary underline">
+                      Ollama管理ページ
+                    </Link>
+                    <span>で起動してください。</span>
+                  </div>
+                ) : installedModels.length === 0 ? (
+                  <div className="text-sm text-amber-500 flex items-center space-x-2 h-10 py-2">
+                    <span>インストール済みのモデルがありません。</span>
+                    <Link href="/ollama" className="text-primary underline">
+                      Ollama管理ページ
+                    </Link>
+                    <span>でモデルをインストールしてください。</span>
+                  </div>
+                ) : (
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger id="model-select">
+                      <SelectValue placeholder="モデルを選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {installedModels.map((model) => (
+                        <SelectItem key={model.name} value={model.name}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               
               <div className="flex items-center justify-between">
@@ -70,8 +143,17 @@ export default function SettingsPage() {
                     最新バージョンのモデルがあるか確認します
                   </p>
                 </div>
-                <Button size="sm" variant="outline">
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={loadModels}
+                  disabled={isLoadingModels || !ollamaRunning}
+                >
+                  {isLoadingModels ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  )}
                   更新確認
                 </Button>
               </div>
@@ -79,15 +161,21 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <label className="text-sm font-medium">
-                    新しいモデルのダウンロード
+                    モデル管理
                   </label>
                   <p className="text-xs text-muted-foreground">
-                    Ollamaで利用可能な他のモデルをダウンロードします
+                    Ollamaで利用可能なモデルの管理や追加を行います
                   </p>
                 </div>
-                <Button size="sm">
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  追加
+                <Button 
+                  size="sm"
+                  variant="secondary"
+                  asChild
+                >
+                  <Link href="/ollama">
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
+                    Ollama管理
+                  </Link>
                 </Button>
               </div>
             </CardContent>
@@ -172,7 +260,9 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Ollamaステータス</p>
-                  <p className="text-sm font-medium text-green-500">実行中</p>
+                  <p className={`text-sm font-medium ${ollamaRunning ? 'text-green-500' : 'text-red-500'}`}>
+                    {ollamaRunning ? '実行中' : '停止中'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">使用中メモリ</p>
