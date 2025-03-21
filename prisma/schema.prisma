@@ -110,6 +110,19 @@ model SandboxSession {
   metadata  String?  // セッションのメタデータ（JSON形式）
 }
 
+// フィードバック情報
+model Feedback {
+  id        String          @id @default(cuid())
+  createdAt DateTime        @default(now())
+  type      FeedbackType
+  content   String
+  email     String?         // 任意の連絡先メール
+  status    FeedbackStatus  @default(NEW)
+  rating    Int?            // 評価（1-5）
+  response  String?         // フィードバックに対する応答
+  metadata  String?         // JSON形式のメタデータ（ブラウザ情報やシステム情報など）
+}
+
 enum TaskStatus {
   PENDING
   IN_PROGRESS
@@ -131,4 +144,20 @@ enum LogLevel {
   WARNING
   ERROR
   CRITICAL
+}
+
+enum FeedbackType {
+  BUG
+  FEATURE_REQUEST
+  GENERAL
+  IMPROVEMENT
+  QUESTION
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+  SPAM
 }
