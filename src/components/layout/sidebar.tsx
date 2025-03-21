@@ -9,7 +9,8 @@ import {
   Settings, 
   Menu, 
   X,
-  Cpu
+  Cpu,
+  Brain
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,6 +47,11 @@ const navItems: NavItem[] = [
     title: 'エディタ',
     href: '/editor',
     icon: <Code className="h-5 w-5" />,
+  },
+  {
+    title: 'Ollama',
+    href: '/ollama',
+    icon: <Brain className="h-5 w-5" />,
   },
   {
     title: '設定',
