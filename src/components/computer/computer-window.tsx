@@ -5,11 +5,11 @@ import {
   ChevronRight, 
   Cpu, 
   Play, 
-  Stop, 
   RotateCcw, 
   X, 
   Maximize2, 
-  Minimize2 
+  Minimize2,
+  Square // Stopの代わりにSquareを使用
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -171,7 +171,7 @@ export function ComputerWindow({
               onClick={onStop}
               disabled={!isRunning}
             >
-              <Stop className="h-3 w-3 mr-1" />
+              <Square className="h-3 w-3 mr-1" />
               停止
             </Button>
             <Button
