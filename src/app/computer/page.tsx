@@ -4,7 +4,11 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { ComputerWindow, Action } from '@/components/computer';
 import { v4 as uuidv4 } from 'uuid';
-import { Play, Stop, RotateCcw, Cpu } from 'lucide-react';
+// 個別にインポートするように変更
+import { Play } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import { Cpu } from 'lucide-react';
+import { Square } from 'lucide-react'; // Stopの代わりにSquareを使用
 
 // サンプルアクションデータ
 const SAMPLE_ACTIONS: Action[] = [
@@ -159,7 +163,7 @@ export default function ComputerPage() {
                 
                 <div className="flex items-start">
                   <div className="flex-shrink-0 bg-destructive/10 p-1 rounded-full mr-3">
-                    <Stop className="h-4 w-4 text-destructive" />
+                    <Square className="h-4 w-4 text-destructive" />
                   </div>
                   <div>
                     <p className="font-medium">停止</p>
