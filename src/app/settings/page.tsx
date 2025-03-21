@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette, Loader2 } from 'lucide-react';
+import { BrainCog, Monitor, Download, RotateCcw, Cpu, Palette, Loader2, CheckCircle } from 'lucide-react';
 import { 
   getInstalledModels, 
   OllamaModel, 
@@ -27,14 +27,22 @@ import {
   checkOllamaInstallation
 } from '@/lib/ollama';
 import Link from 'next/link';
+import { 
+  loadSettings, 
+  saveSettings, 
+  updateSetting 
+} from '@/lib/settings';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function SettingsPage() {
-  const [developerMode, setDeveloperMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState('llama3:8b-instruct-q4_0');
+  const { toast } = useToast();
   const [installedModels, setInstalledModels] = useState<OllamaModel[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(true);
   const [ollamaRunning, setOllamaRunning] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  
+  // 設定をロード
+  const [settings, setSettings] = useState(() => loadSettings());
   
   useEffect(() => {
     // Ollamaのステータスを確認
@@ -64,9 +72,12 @@ export default function SettingsPage() {
       const installed = await getInstalledModels();
       setInstalledModels(installed);
       
-      // インストール済みモデルがある場合は、最初のモデルを選択
-      if (installed.length > 0) {
-        setSelectedModel(installed[0].name);
+      // 現在選択されているモデルがインストールされていない場合は最初のモデルを選択
+      const currentModel = settings.selectedModel;
+      const modelExists = installed.some(model => model.name === currentModel);
+      
+      if (!modelExists && installed.length > 0) {
+        updateSettings({ selectedModel: installed[0].name });
       }
     } catch (error) {
       console.error('モデル一覧の読み込み中にエラーが発生しました:', error);
@@ -75,10 +86,35 @@ export default function SettingsPage() {
     }
   };
   
+  // 設定を更新する関数
+  const updateSettings = (newSettings: Partial<typeof settings>) => {
+    const updatedSettings = { ...settings, ...newSettings };
+    setSettings(updatedSettings);
+    saveSettings(newSettings);
+    
+    // 保存成功のフィードバックを表示
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 2000);
+    
+    toast({
+      title: "設定を保存しました",
+      description: "アプリケーションの設定が更新されました",
+    });
+  };
+  
   return (
     <MainLayout>
       <div className="container py-6 space-y-6">
-        <h1 className="text-3xl font-bold">設定</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">設定</h1>
+          
+          {settingsSaved && (
+            <div className="flex items-center text-green-500 text-sm animate-in fade-in slide-in-from-top-5 duration-300">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              保存しました
+            </div>
+          )}
+        </div>
         
         <div className="grid gap-6 md:grid-cols-2">
           {/* Ollamaモデル設定 */}
@@ -119,7 +155,10 @@ export default function SettingsPage() {
                     <span>でモデルをインストールしてください。</span>
                   </div>
                 ) : (
-                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <Select 
+                    value={settings.selectedModel} 
+                    onValueChange={(value) => updateSettings({ selectedModel: value })}
+                  >
                     <SelectTrigger id="model-select">
                       <SelectValue placeholder="モデルを選択" />
                     </SelectTrigger>
@@ -203,8 +242,10 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={notificationsEnabled}
-                  onCheckedChange={setNotificationsEnabled}
+                  checked={settings.notificationsEnabled}
+                  onCheckedChange={(checked) => 
+                    updateSettings({ notificationsEnabled: checked })
+                  }
                 />
               </div>
               
@@ -218,8 +259,10 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <Switch
-                  checked={developerMode}
-                  onCheckedChange={setDeveloperMode}
+                  checked={settings.developerMode}
+                  onCheckedChange={(checked) => 
+                    updateSettings({ developerMode: checked })
+                  }
                 />
               </div>
               
@@ -227,7 +270,12 @@ export default function SettingsPage() {
                 <label htmlFor="theme-select" className="text-sm font-medium">
                   カラーテーマ
                 </label>
-                <Select defaultValue="system">
+                <Select 
+                  value={settings.theme}
+                  onValueChange={(value) => 
+                    updateSettings({ theme: value as 'light' | 'dark' | 'system' })
+                  }
+                >
                   <SelectTrigger id="theme-select">
                     <SelectValue placeholder="テーマを選択" />
                   </SelectTrigger>
@@ -265,8 +313,8 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">使用中メモリ</p>
-                  <p className="text-sm font-medium">2.4 GB</p>
+                  <p className="text-xs text-muted-foreground">選択中モデル</p>
+                  <p className="text-sm font-medium">{settings.selectedModel}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">GPU状態</p>
