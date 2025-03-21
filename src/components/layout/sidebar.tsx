@@ -13,6 +13,7 @@ import {
   Brain
 } from 'lucide-react';
 import Link from 'next/link';
+import { FeedbackDialog } from '@/components/feedback';
 
 // サイドバーのナビゲーション項目の型定義
 type NavItem = {
@@ -109,9 +110,12 @@ export function Sidebar({
       </nav>
 
       {/* サイドバーフッター */}
-      <div className="p-4 border-t">
-        <div className="text-sm text-muted-foreground">
-          Windows Manus Clone v0.1.0
+      <div className="p-4 border-t flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Windows Manus Clone v0.1.0
+          </div>
+          <FeedbackDialog />
         </div>
       </div>
     </aside>
