@@ -141,6 +141,7 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
 - shadcn/uiコンポーネントの追加実装完了
   - Dialog, Button, Toast, Toaster, Form, Input, Label, Textarea, Select, Radio Group コンポーネントを追加
   - フィードバックダイアログで使用される全てのUIコンポーネントの実装完了
+  - Alert, AlertTitle, AlertDescriptionコンポーネントを追加
 - 依存関係の修正
   - `@radix-ui/react-radio-group` パッケージを追加し、RadioGroupコンポーネントの正常動作を確保
 - Ollama連携機能の修正
@@ -204,6 +205,8 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
     - チャットAPIエンドポイントのエラー処理強化
     - アプリ起動時のモデル同期機能追加
     - チャットページにウェルカムメッセージとモデルエラー通知を追加
+  - UIコンポーネントの追加
+    - Alert関連コンポーネントの実装
 
 ## 次のステップ
 - テストと最適化
