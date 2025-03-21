@@ -138,6 +138,9 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
   - SQLiteがenum型をサポートしていない問題を解決
   - enum型を文字列型に変更しアプリケーション内で定数として再定義
   - タイプセーフなenum定数をアプリケーション全体でアクセス可能に設定
+- shadcn/uiコンポーネントの追加実装完了
+  - Dialog, Button, Toast, Toaster, Form, Input, Label, Textarea, Select, Radio Group コンポーネントを追加
+  - フィードバックダイアログで使用される全てのUIコンポーネントの実装完了
 
 ## 次のステップ
 - Windows固有機能の実装
