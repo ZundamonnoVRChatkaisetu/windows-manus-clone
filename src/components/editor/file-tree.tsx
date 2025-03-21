@@ -1,10 +1,12 @@
+'use client';
+
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VSCodeFile } from '@/lib/vscode';
 
 // ファイルツリーのアイテム型
-interface FileTreeItem {
+export interface FileTreeItem {
   id: string;
   name: string;
   type: 'file' | 'folder';
