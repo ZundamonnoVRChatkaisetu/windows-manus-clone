@@ -7,15 +7,14 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle2, Download } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [isInitializing, setIsInitializing] = useState(true);
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'running' | 'not-running' | 'error'>('checking');
   const [modelStatus, setModelStatus] = useState<'checking' | 'available' | 'not-available' | 'error'>('checking');
-  const [downloadingLlama, setDownloadingLlama] = useState(false);
-  const [installedModels, setInstalledModels] = useState<string[]>([]);
+  const [installedModels, setInstalledModels] = useState<any[]>([]);
 
   // アプリ起動時にモデル同期を実行
   useEffect(() => {
@@ -35,7 +34,7 @@ export default function HomePage() {
           if (syncResponse.ok) {
             if (syncData.models && syncData.models.length > 0) {
               setModelStatus('available');
-              setInstalledModels(syncData.models.map((model: any) => model.name));
+              setInstalledModels(syncData.models);
             } else {
               setModelStatus('not-available');
             }
@@ -90,53 +89,6 @@ export default function HomePage() {
     }
   };
 
-  const handleDownloadLlama3 = async () => {
-    if (downloadingLlama) return;
-
-    setDownloadingLlama(true);
-    try {
-      toast({
-        title: "llama3:latestをダウンロード中",
-        description: "このプロセスには数分かかることがあります...",
-      });
-
-      const response = await fetch('/api/ollama/models/pull', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: 'llama3:latest' })
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast({
-          title: "ダウンロード完了",
-          description: "llama3:latestモデルが正常にインストールされました。",
-        });
-        
-        // 現在のページをリロードしてステータスを更新
-        window.location.reload();
-      } else {
-        toast({
-          title: "エラー",
-          description: data.error || "モデルのダウンロードに失敗しました",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('モデルダウンロードエラー:', error);
-      toast({
-        title: "エラー",
-        description: "モデルのダウンロード中にエラーが発生しました",
-        variant: "destructive",
-      });
-    } finally {
-      setDownloadingLlama(false);
-    }
-  };
-
   const goToSettings = () => {
     router.push('/settings');
   };
@@ -148,9 +100,6 @@ export default function HomePage() {
   const goToOllamaManager = () => {
     router.push('/ollama');
   };
-
-  // llama3:latestが既にインストールされているかチェック
-  const hasLlama3Latest = installedModels.includes('llama3:latest');
 
   return (
     <MainLayout>
@@ -222,30 +171,20 @@ export default function HomePage() {
                     <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <AlertTitle>AIモデル利用可能</AlertTitle>
                     <AlertDescription>
-                      <p className="mb-2">AIモデルが検出され、チャット機能が利用可能です</p>
-                      {hasLlama3Latest ? (
-                        <div className="flex space-x-2">
-                          <Button onClick={goToChat} size="sm" className="flex-1">チャットを開始</Button>
-                          <Button onClick={goToOllamaManager} size="sm" variant="outline">モデル管理</Button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col space-y-2">
-                          <Button onClick={goToChat} size="sm">チャットを開始</Button>
-                          <p className="text-amber-600 dark:text-amber-400 text-sm mt-2">
-                            推奨モデル「llama3:latest」がインストールされていません。
-                          </p>
-                          <Button 
-                            onClick={handleDownloadLlama3} 
-                            disabled={downloadingLlama} 
-                            size="sm" 
-                            variant="secondary"
-                            className="w-full"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
-                          </Button>
-                        </div>
-                      )}
+                      <p className="mb-2">
+                        {installedModels.length === 1 ? (
+                          `「${installedModels[0].name}」モデルが検出されました`
+                        ) : (
+                          `${installedModels.length}個のモデルが検出されました`
+                        )}
+                      </p>
+                      <div className="flex space-x-2">
+                        <Button onClick={goToChat} size="sm" className="flex-1">チャットを開始</Button>
+                        <Button onClick={goToSettings} size="sm" variant="outline">
+                          <Settings className="h-4 w-4 mr-1.5" />
+                          モデル選択
+                        </Button>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 ) : modelStatus === 'not-available' ? (
@@ -253,19 +192,10 @@ export default function HomePage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>AIモデルがありません</AlertTitle>
                     <AlertDescription>
-                      <p className="mb-2">利用可能なAIモデルが検出されませんでした。このアプリを利用するには、「llama3:latest」モデルのインストールをお勧めします。</p>
-                      <div className="flex flex-col space-y-2">
-                        <Button 
-                          onClick={handleDownloadLlama3} 
-                          disabled={downloadingLlama || ollamaStatus !== 'running'} 
-                          size="sm"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">または</p>
-                        <Button onClick={goToSettings} size="sm" variant="outline">
-                          別のモデルを設定
+                      <p className="mb-2">利用可能なAIモデルが検出されませんでした。Ollama管理ページからモデルをインストールしてください。</p>
+                      <div className="flex space-x-2">
+                        <Button onClick={goToOllamaManager} size="sm" className="flex-1">
+                          Ollama管理ページへ
                         </Button>
                       </div>
                     </AlertDescription>
