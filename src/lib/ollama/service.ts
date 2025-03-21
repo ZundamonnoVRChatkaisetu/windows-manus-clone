@@ -164,6 +164,17 @@ export async function setDefaultOllamaModel(modelName: string) {
  */
 export async function getSelectedOllamaModel() {
   try {
+    // まず設定が存在するか確認
+    const settingsCount = await prisma.userSettings.count();
+    
+    // 設定がない場合は作成
+    if (settingsCount === 0) {
+      console.log('Creating new UserSettings record');
+      await prisma.userSettings.create({
+        data: {} // デフォルト値を使用
+      });
+    }
+    
     const settings = await prisma.userSettings.findFirst();
     
     if (!settings || !settings.selectedModel) {
