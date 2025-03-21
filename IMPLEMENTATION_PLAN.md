@@ -148,6 +148,11 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
   - Ollamaサービスとのやり取りを行うためのメソッドを実装（モデル一覧取得、テキスト生成、チャット、埋め込み取得など）
 - Next.jsのクライアント/サーバーコンポーネント対応
   - `code-editor.tsx`ファイルに`'use client'`ディレクティブを追加し、useRefを使用可能に
+  - エディタコンポーネントの修正完了（vscode-editor.tsx, editor-header.tsx, file-tree.tsx, file-tabs.tsx, output-panel.tsx）
+  - 全てのエディタ関連コンポーネントにuse clientディレクティブを追加
+  - getLanguageSample関数の実装と名前付きエクスポートへの変更
+  - CodeEditorコンポーネントのPropsインターフェースを修正
+  - コンポーネント間の連携の整合性確保
   - `computer/page.tsx`に不足していたLucideアイコンのインポートを追加
   - Node.js依存の`ollama-installer.ts`をAPIルートに移行し、サーバーとクライアントの責務を分離
   - `/api/ollama/check`と`/api/ollama/start`のAPIルートを追加し、Node.js機能をサーバーサイドで実行
