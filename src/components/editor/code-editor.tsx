@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CodeEditorProps {
-  code: string;
+  value: string;
   language?: string;
   onChange?: (code: string) => void;
   readOnly?: boolean;
@@ -13,25 +13,25 @@ interface CodeEditorProps {
   placeholder?: string;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({
-  code,
+export function CodeEditor({
+  value,
   language = 'javascript',
   onChange,
   readOnly = false,
   className = '',
   height = 'min-h-[200px]',
   placeholder = 'コードを入力してください...'
-}) => {
-  const [value, setValue] = useState(code || '');
+}: CodeEditorProps) {
+  const [code, setCode] = useState(value || '');
   const editorRef = useRef<HTMLTextAreaElement>(null);
   
   useEffect(() => {
-    setValue(code || '');
-  }, [code]);
+    setCode(value || '');
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    setValue(newValue);
+    setCode(newValue);
     onChange?.(newValue);
   };
 
@@ -64,7 +64,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       </div>
       <textarea
         ref={editorRef}
-        value={value}
+        value={code}
         onChange={handleChange}
         readOnly={readOnly}
         placeholder={placeholder}
@@ -77,6 +77,123 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       />
     </div>
   );
-};
+}
 
-export default CodeEditor;
+// 言語ごとのサンプルコードを取得する関数
+export function getLanguageSample(language: string): string {
+  switch (language.toLowerCase()) {
+    case 'javascript':
+    case 'js':
+      return `// JavaScript Sample
+console.log('Hello, World!');
+
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+
+const result = greet('User');
+console.log(result);
+`;
+
+    case 'typescript':
+    case 'ts':
+      return `// TypeScript Sample
+console.log('Hello, World!');
+
+function greet(name: string): string {
+  return \`Hello, \${name}!\`;
+}
+
+const result: string = greet('User');
+console.log(result);
+`;
+
+    case 'python':
+    case 'py':
+      return `# Python Sample
+print("Hello, World!")
+
+def greet(name):
+    return f"Hello, {name}!"
+
+result = greet("User")
+print(result)
+`;
+
+    case 'html':
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Sample</title>
+</head>
+<body>
+  <h1>Hello, World!</h1>
+  <p>This is a sample HTML document.</p>
+</body>
+</html>
+`;
+
+    case 'css':
+      return `/* CSS Sample */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+  background-color: #f8f8f8;
+}
+
+h1 {
+  color: #0066cc;
+}
+
+p {
+  line-height: 1.6;
+}
+`;
+
+    case 'json':
+      return `{
+  "name": "sample-project",
+  "version": "1.0.0",
+  "description": "A sample project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \\"Error: no test specified\\" && exit 1"
+  },
+  "keywords": ["sample", "example"],
+  "author": "",
+  "license": "MIT"
+}
+`;
+
+    case 'markdown':
+    case 'md':
+      return `# Sample Markdown
+
+## Introduction
+
+This is a sample Markdown document.
+
+- Item 1
+- Item 2
+- Item 3
+
+[Link to Example](https://example.com)
+
+\`\`\`javascript
+console.log('Hello from code block!');
+\`\`\`
+`;
+
+    default:
+      return `// Sample Code
+// Language: ${language}
+
+// Your code here...
+`;
+  }
+}
