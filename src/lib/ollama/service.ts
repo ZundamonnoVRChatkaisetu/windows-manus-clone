@@ -89,11 +89,8 @@ export async function syncOllamaModels() {
       // 現在選択されているモデルが存在するか確認
       const selectedModel = await getSelectedOllamaModel();
       
-      // 選択されたモデルがない場合は、最初のモデルを自動選択
-      if (!selectedModel && ollamaModels.length > 0) {
-        await setDefaultOllamaModel(ollamaModels[0].name);
-        console.log(`Auto-selected default model: ${ollamaModels[0].name}`);
-      }
+      // 選択されたモデルがない場合は、選択状態はnullのままにする
+      // ユーザーが明示的に選択できるようにする
     });
     
     // 更新後のモデルリストを返す
@@ -135,7 +132,7 @@ export async function getDetectedOllamaModels() {
  */
 export async function setDefaultOllamaModel(modelName: string) {
   try {
-    console.log(`Setting default Ollama model to: ${modelName}`);
+    console.log(`Setting Ollama model to: ${modelName}`);
     
     // モデルが存在するか確認
     const model = await prisma.ollamaModel.findUnique({
@@ -151,11 +148,10 @@ export async function setDefaultOllamaModel(modelName: string) {
         throw new Error(`Model ${modelName} not found and no models available`);
       }
       
-      // 指定のモデルが同期後も見つからなければ最初のモデルを使用
+      // 指定のモデルが同期後も見つからなければエラー
       const syncedModel = availableModels.find(m => m.name === modelName);
       if (!syncedModel) {
-        console.log(`Using first available model instead: ${availableModels[0].name}`);
-        modelName = availableModels[0].name;
+        throw new Error(`Model ${modelName} not found after syncing`);
       }
     }
     
@@ -183,14 +179,13 @@ export async function setDefaultOllamaModel(modelName: string) {
     
     return true;
   } catch (error) {
-    console.error('Error setting default Ollama model:', error);
+    console.error('Error setting Ollama model:', error);
     return false;
   }
 }
 
 /**
  * 現在選択されているOllamaモデルを取得する
- * モデルが選択されていない場合、最初に見つかったモデルを自動選択する
  */
 export async function getSelectedOllamaModel() {
   try {
@@ -208,17 +203,8 @@ export async function getSelectedOllamaModel() {
     const settings = await prisma.userSettings.findFirst();
     
     if (!settings || !settings.selectedModel) {
-      console.log('No selected model in settings, attempting to auto-select');
-      // 選択されたモデルがない場合、利用可能なモデルから最初のものを自動選択
-      const availableModels = await getDetectedOllamaModels();
-      
-      if (availableModels.length > 0) {
-        console.log(`Auto-selecting first available model: ${availableModels[0].name}`);
-        await setDefaultOllamaModel(availableModels[0].name);
-        return availableModels[0];
-      }
-      
-      console.warn('No models available to auto-select');
+      console.log('No selected model in settings');
+      // ユーザーが明示的に選択するまでは選択状態にしない
       return null;
     }
     
@@ -227,18 +213,9 @@ export async function getSelectedOllamaModel() {
       where: { name: settings.selectedModel }
     });
     
-    // 選択されたモデルが検出されなくなった場合、新しいモデルを自動選択
+    // 選択されたモデルが検出されなくなった場合はnullを返す
     if (!model || !model.isDetected) {
-      console.log('Selected model no longer detected, attempting to find another model');
-      const availableModels = await getDetectedOllamaModels();
-      
-      if (availableModels.length > 0) {
-        console.log(`Selecting alternative model: ${availableModels[0].name}`);
-        await setDefaultOllamaModel(availableModels[0].name);
-        return availableModels[0];
-      }
-      
-      console.warn('No alternative models available');
+      console.log('Selected model no longer detected');
       return null;
     }
     
