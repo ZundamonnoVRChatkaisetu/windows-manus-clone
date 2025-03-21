@@ -142,6 +142,7 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
   - Dialog, Button, Toast, Toaster, Form, Input, Label, Textarea, Select, Radio Group コンポーネントを追加
   - フィードバックダイアログで使用される全てのUIコンポーネントの実装完了
   - Alert, AlertTitle, AlertDescriptionコンポーネントを追加
+  - ScrollAreaコンポーネントの実装完了（エディタファイルタブ用）
 - 依存関係の修正
   - `@radix-ui/react-radio-group` パッケージを追加し、RadioGroupコンポーネントの正常動作を確保
 - Ollama連携機能の修正
