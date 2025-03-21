@@ -24,8 +24,7 @@ import {
   getInstalledModels, 
   OllamaModel, 
   getAvailableModels,
-  checkOllamaInstallation,
-  pullModel
+  checkOllamaInstallation
 } from '@/lib/ollama';
 import Link from 'next/link';
 import { 
@@ -42,7 +41,6 @@ export default function SettingsPage() {
   const [isLoadingModels, setIsLoadingModels] = useState(true);
   const [ollamaRunning, setOllamaRunning] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [downloadingLlama, setDownloadingLlama] = useState(false);
   
   // 設定をロード
   const [settings, setSettings] = useState(() => loadSettings());
@@ -79,14 +77,8 @@ export default function SettingsPage() {
       const currentModel = settings.selectedModel;
       const modelExists = installed.some(model => model.name === currentModel);
       
-      // llama3:latestがインストールされているかチェック
-      const hasLlama3Latest = installed.some(model => model.name === 'llama3:latest');
-      
-      if (hasLlama3Latest && (!modelExists || !currentModel)) {
-        // llama3:latestが利用可能で、現在のモデルが未設定または存在しない場合は自動選択
-        updateSettings({ selectedModel: 'llama3:latest' });
-      } else if (!modelExists && installed.length > 0) {
-        // それ以外の場合は最初のモデルを選択
+      if (!modelExists && installed.length > 0) {
+        // 選択されたモデルが無効な場合は最初のモデルを選択
         updateSettings({ selectedModel: installed[0].name });
       }
     } catch (error) {
@@ -112,43 +104,6 @@ export default function SettingsPage() {
     });
   };
 
-  // llama3:latestをダウンロード
-  const handleDownloadLlama3 = async () => {
-    if (downloadingLlama) return;
-
-    setDownloadingLlama(true);
-    try {
-      toast({
-        title: "llama3:latestをダウンロード中",
-        description: "このプロセスには数分かかることがあります...",
-      });
-
-      await pullModel('llama3:latest');
-      
-      toast({
-        title: "ダウンロード完了",
-        description: "llama3:latestモデルが正常にインストールされました。",
-      });
-      
-      // モデルリストを更新して、新しくインストールされたllama3:latestを選択
-      await loadModels();
-      updateSettings({ selectedModel: 'llama3:latest' });
-      
-    } catch (error) {
-      console.error('モデルダウンロードエラー:', error);
-      toast({
-        title: "エラー",
-        description: "モデルのダウンロード中にエラーが発生しました",
-        variant: "destructive",
-      });
-    } finally {
-      setDownloadingLlama(false);
-    }
-  };
-
-  // llama3:latestがインストールされているかチェック
-  const hasLlama3Latest = installedModels.some(model => model.name === 'llama3:latest');
-  
   return (
     <MainLayout>
       <div className="container py-6 space-y-6">
@@ -199,16 +154,6 @@ export default function SettingsPage() {
                       <AlertCircle className="h-4 w-4 mr-1.5" />
                       <span>インストール済みのモデルがありません。</span>
                     </div>
-                    <Button 
-                      onClick={handleDownloadLlama3} 
-                      disabled={downloadingLlama} 
-                      size="sm"
-                      className="w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">または</p>
                     <Link href="/ollama" className="w-full">
                       <Button 
                         variant="outline"
@@ -236,25 +181,6 @@ export default function SettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    
-                    {!hasLlama3Latest && (
-                      <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        <AlertTitle>推奨モデルがインストールされていません</AlertTitle>
-                        <AlertDescription>
-                          <p className="mb-2">最適なパフォーマンスのため、llama3:latestのインストールをお勧めします。</p>
-                          <Button 
-                            onClick={handleDownloadLlama3} 
-                            disabled={downloadingLlama} 
-                            size="sm"
-                            variant="secondary"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            {downloadingLlama ? 'ダウンロード中...' : 'llama3:latestをインストール'}
-                          </Button>
-                        </AlertDescription>
-                      </Alert>
-                    )}
                   </div>
                 )}
               </div>
