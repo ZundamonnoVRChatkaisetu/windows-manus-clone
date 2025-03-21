@@ -81,6 +81,14 @@ export async function syncOllamaModels() {
           });
         }
       }
+      
+      // 現在選択されているモデルが存在するか確認
+      const selectedModel = await getSelectedOllamaModel();
+      
+      // 選択されたモデルがない場合は、最初のモデルを自動選択
+      if (!selectedModel && ollamaModels.length > 0) {
+        await setDefaultOllamaModel(ollamaModels[0].name);
+      }
     });
     
     // 更新後のモデルリストを返す
@@ -152,12 +160,21 @@ export async function setDefaultOllamaModel(modelName: string) {
 
 /**
  * 現在選択されているOllamaモデルを取得する
+ * モデルが選択されていない場合、最初に見つかったモデルを自動選択する
  */
 export async function getSelectedOllamaModel() {
   try {
     const settings = await prisma.userSettings.findFirst();
     
     if (!settings || !settings.selectedModel) {
+      // 選択されたモデルがない場合、利用可能なモデルから最初のものを自動選択
+      const availableModels = await getDetectedOllamaModels();
+      
+      if (availableModels.length > 0) {
+        await setDefaultOllamaModel(availableModels[0].name);
+        return availableModels[0];
+      }
+      
       return null;
     }
     
@@ -165,6 +182,18 @@ export async function getSelectedOllamaModel() {
     const model = await prisma.ollamaModel.findUnique({
       where: { name: settings.selectedModel }
     });
+    
+    // 選択されたモデルが検出されなくなった場合、新しいモデルを自動選択
+    if (!model || !model.isDetected) {
+      const availableModels = await getDetectedOllamaModels();
+      
+      if (availableModels.length > 0) {
+        await setDefaultOllamaModel(availableModels[0].name);
+        return availableModels[0];
+      }
+      
+      return null;
+    }
     
     return model;
   } catch (error) {
