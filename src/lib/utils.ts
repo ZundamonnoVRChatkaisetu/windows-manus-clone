@@ -22,6 +22,19 @@ export function formatDate(date: Date): string {
 }
 
 /**
+ * Format file size to human readable string
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+/**
  * Sleep for a given number of milliseconds
  */
 export function sleep(ms: number): Promise<void> {
@@ -63,4 +76,43 @@ export function safeJsonParse<T>(str: string, fallback: T): T {
 export function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.slice(0, length) + "...";
+}
+
+/**
+ * Get file extension from file name
+ */
+export function getFileExtension(fileName: string): string {
+  return fileName.slice((fileName.lastIndexOf(".") - 1 >>> 0) + 2);
+}
+
+/**
+ * Get MIME type from file extension
+ */
+export function getMimeType(extension: string): string {
+  const mimeTypes: Record<string, string> = {
+    'txt': 'text/plain',
+    'html': 'text/html',
+    'css': 'text/css',
+    'js': 'text/javascript',
+    'ts': 'text/typescript',
+    'json': 'application/json',
+    'xml': 'application/xml',
+    'csv': 'text/csv',
+    'md': 'text/markdown',
+    'pdf': 'application/pdf',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'svg': 'image/svg+xml',
+    'zip': 'application/zip',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  };
+  
+  return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
 }
