@@ -8,7 +8,8 @@ import {
   Code, 
   Settings, 
   Menu, 
-  X 
+  X,
+  Cpu
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +36,11 @@ const navItems: NavItem[] = [
     title: 'ブラウザ',
     href: '/browser',
     icon: <Globe className="h-5 w-5" />,
+  },
+  {
+    title: 'コンピュータ',
+    href: '/computer',
+    icon: <Cpu className="h-5 w-5" />,
   },
   {
     title: 'エディタ',
