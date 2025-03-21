@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { syncOllamaModels } from '@/lib/ollama/service';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,11 +18,8 @@ export const viewport: Viewport = {
   ],
 };
 
-// アプリ起動時にモデルを同期して初期設定
-syncOllamaModels().catch(error => {
-  console.warn('Initial Ollama models sync failed:', error);
-  console.warn('This is normal if Ollama is not running. Will try again later.');
-});
+// 注意: サーバーコンポーネントから直接Ollamaの同期処理を呼び出さない
+// ハイドレーションエラーの原因となる
 
 export default function RootLayout({
   children,
@@ -32,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
