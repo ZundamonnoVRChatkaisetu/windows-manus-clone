@@ -148,6 +148,7 @@ Windows環境で動作するManus AIのクローンアプリケーションを�
 - Ollama連携機能の修正
   - 不足していた`ollama-client.ts`ファイルを作成し、Ollama API通信クラスを実装
   - Ollamaサービスとのやり取りを行うためのメソッドを実装（モデル一覧取得、テキスト生成、チャット、埋め込み取得など）
+  - Ollamaサービス機能をindexファイルから正しくエクスポートするように修正
 - Next.jsのクライアント/サーバーコンポーネント対応
   - `code-editor.tsx`ファイルに`'use client'`ディレクティブを追加し、useRefを使用可能に
   - エディタコンポーネントの修正完了（vscode-editor.tsx, editor-header.tsx, file-tree.tsx, file-tabs.tsx, output-panel.tsx）
